@@ -1,0 +1,193 @@
+diff -Nur -x '*Po*' ephyr/blitter.c mensadisplay/blitter.c
+--- ephyr/blitter.c	1970-01-01 01:00:00.000000000 +0100
++++ mensadisplay/blitter.c	2014-10-28 22:46:41.360330844 +0100
+@@ -0,0 +1,96 @@
++#include <xorg-server.h>
++
++#ifdef HAVE_CONFIG_H
++#include <kdrive-config.h>
++#endif
++
++#include <xcb/xcb_keysyms.h>
++#include <X11/keysym.h>
++
++#include "blitter.h"
++
++#include <zmq.h>
++#include <string.h>
++#include <stdio.h>
++#include <unistd.h>
++#include <stdlib.h>
++#include <pthread.h>
++#include <math.h>
++#include <netinet/ip.h>
++#include <sys/epoll.h>
++#include <sys/time.h>
++
++#define WIDTH 480
++#define HEIGHT 70
++
++#define CMD_PIXEL 0
++#define CMD_BLIT 1
++
++typedef struct _msgBlit {
++  uint8_t cmd;
++  uint32_t x;
++  uint32_t y;
++  uint32_t w;
++  uint32_t h;
++  uint8_t data[WIDTH * HEIGHT];
++} __attribute__ ((packed)) msgBlit;
++
++static msgBlit *mensascreen;
++static KdScreenInfo *screen;
++
++static void *blitScreen(void *ignored) {
++  volatile xcb_image_t *ximg = ((EphyrScrPriv *)screen->driver)->ximg;
++  void *context = zmq_ctx_new ();
++  void *requester;
++
++  requester = zmq_socket (context, ZMQ_REQ);
++  zmq_connect(requester, "tcp://mensadisplay:5556");
++  // zmq_connect(requester, "tcp://192.168.178.147:5570");
++  // zmq_connect(requester, "tcp://localhost:5556");
++
++  while(1) {
++    int x, y;
++    zmq_msg_t msg;
++
++    for(y = 0; y < HEIGHT; ++y) {
++      for(x = 0; x < WIDTH; ++x) {
++        mensascreen->data[y * WIDTH + x] = (
++          ximg->data[y * ximg->stride + x * ximg->bpp / 8 + 0] +
++          ximg->data[y * ximg->stride + x * ximg->bpp / 8 + 1] +
++          ximg->data[y * ximg->stride + x * ximg->bpp / 8 + 2]
++          ) / 3;
++      }
++    }
++
++    zmq_msg_init_size(&msg, sizeof(msgBlit));
++
++    memcpy(zmq_msg_data(&msg), (msgBlit *)(mensascreen), sizeof(msgBlit));
++    zmq_msg_send(&msg, requester, ZMQ_SNDMORE);
++
++    zmq_msg_init_size(&msg, 0);
++    zmq_msg_send(&msg, requester, 0);
++    zmq_recv(requester, NULL, 0, 0);
++  }
++
++  zmq_close(requester);
++  zmq_ctx_destroy(context);
++
++  return 0;
++}
++
++Bool blitter_start(KdScreenInfo *ephyrScreen) {
++  pthread_t blitter;
++
++  screen = ephyrScreen;
++
++  mensascreen = malloc(sizeof(msgBlit));
++  mensascreen->cmd = CMD_BLIT;
++  mensascreen->x = 0;
++  mensascreen->y = 0;
++  mensascreen->w = WIDTH;
++  mensascreen->h = HEIGHT;
++
++  pthread_create(&blitter, 0, blitScreen, 0);
++
++  return 1;
++}
+diff -Nur -x '*Po*' ephyr/blitter.h mensadisplay/blitter.h
+--- ephyr/blitter.h	1970-01-01 01:00:00.000000000 +0100
++++ mensadisplay/blitter.h	2014-10-28 22:17:47.588293990 +0100
+@@ -0,0 +1,8 @@
++#ifndef BLITTER_H
++#define BLITTER_H
++
++#include "ephyr.h"
++
++Bool blitter_start(KdScreenInfo *ephyrScreen);
++
++#endif
+Binary files ephyr/blitter.o and mensadisplay/blitter.o differ
+diff -Nur -x '*Po*' ephyr/ephyr.c mensadisplay/ephyr.c
+--- ephyr/ephyr.c	2014-10-28 20:07:06.704127323 +0100
++++ mensadisplay/ephyr.c	2014-10-28 22:14:07.188289306 +0100
+@@ -31,6 +31,7 @@
+ #include <X11/keysym.h>
+ 
+ #include "ephyr.h"
++#include "blitter.h"
+ 
+ #include "inputstr.h"
+ #include "scrnintstr.h"
+@@ -250,6 +251,8 @@
+                           screen->width, screen->height, buffer_height,
+                           &priv->bytes_per_line, &screen->fb.bitsPerPixel);
+ 
++    blitter_start(screen);
++
+     if ((scrpriv->randr & RR_Rotate_0) && !(scrpriv->randr & RR_Reflect_All)) {
+         scrpriv->shadow = FALSE;
+ 
+Binary files ephyr/ephyrcursor.o and mensadisplay/ephyrcursor.o differ
+Binary files ephyr/ephyr_draw.o and mensadisplay/ephyr_draw.o differ
+Binary files ephyr/ephyrdriext.o and mensadisplay/ephyrdriext.o differ
+Binary files ephyr/ephyrdri.o and mensadisplay/ephyrdri.o differ
+Binary files ephyr/ephyrglxext.o and mensadisplay/ephyrglxext.o differ
+Binary files ephyr/ephyrhostglx.o and mensadisplay/ephyrhostglx.o differ
+Binary files ephyr/ephyrinit.o and mensadisplay/ephyrinit.o differ
+Binary files ephyr/ephyr.o and mensadisplay/ephyr.o differ
+Binary files ephyr/ephyrvideo.o and mensadisplay/ephyrvideo.o differ
+Binary files ephyr/hostx.o and mensadisplay/hostx.o differ
+diff -Nur -x '*Po*' ephyr/Makefile mensadisplay/Makefile
+--- ephyr/Makefile	2014-10-28 21:50:18.192258930 +0100
++++ mensadisplay/Makefile	2014-10-28 22:31:54.232311987 +0100
+@@ -125,7 +125,7 @@
+ CONFIG_CLEAN_VPATH_FILES =
+ am__installdirs = "$(DESTDIR)$(bindir)"
+ PROGRAMS = $(bin_PROGRAMS)
+-am__Xephyr_SOURCES_DIST = ephyr.c ephyr.h ephyrlog.h ephyr_draw.c os.c \
++am__Xephyr_SOURCES_DIST = blitter.c blitter.h ephyr.c ephyr.h ephyrlog.h ephyr_draw.c os.c \
+ 	ephyrinit.c ephyrcursor.c hostx.c hostx.h ephyrvideo.c \
+ 	ephyrdriext.c ephyrdriext.h ephyrdri.c ephyrdri.h \
+ 	ephyrglxext.c ephyrglxext.h ephyrhostglx.c ephyrhostglx.h \
+@@ -136,7 +136,7 @@
+ #am__objects_3 = ephyr_glamor_xv.$(OBJEXT)
+ #am__objects_4 = ephyr_glamor_glx.$(OBJEXT) \
+ #	$(am__objects_3)
+-am_Xephyr_OBJECTS = ephyr.$(OBJEXT) ephyr_draw.$(OBJEXT) os.$(OBJEXT) \
++am_Xephyr_OBJECTS = blitter.$(OBJEXT) ephyr.$(OBJEXT) ephyr_draw.$(OBJEXT) os.$(OBJEXT) \
+ 	ephyrinit.$(OBJEXT) ephyrcursor.$(OBJEXT) hostx.$(OBJEXT) \
+ 	$(am__objects_1) $(am__objects_2) $(am__objects_4)
+ Xephyr_OBJECTS = $(am_Xephyr_OBJECTS)
+@@ -358,7 +358,7 @@
+ INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
+ KDRIVE_CFLAGS = $(CWARNFLAGS) -fno-strict-aliasing -D_DEFAULT_SOURCE -D_BSD_SOURCE -DHAS_FCHOWN -DHAS_STICKY_DIR_BIT -I/usr/local/include -I/usr/include/pixman-1 -I/usr/include/libdrm -I/usr/include/freetype2 -I/usr/include/X11/dri   -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/Xext -I$(top_srcdir)/composite -I$(top_srcdir)/damageext -I$(top_srcdir)/xfixes -I$(top_srcdir)/Xi -I$(top_srcdir)/mi -I$(top_srcdir)/miext/sync -I$(top_srcdir)/miext/shadow  -I$(top_srcdir)/miext/damage -I$(top_srcdir)/render -I$(top_srcdir)/randr -I$(top_srcdir)/fb -I$(top_srcdir)/dbe -I$(top_srcdir)/present -fvisibility=hidden -DHAVE_KDRIVE_CONFIG_H  
+ KDRIVE_INCS = -I$(top_srcdir)/hw/kdrive/src -I$(top_srcdir)/miext/sync -I$(top_srcdir)/miext/damage -I$(top_srcdir)/miext/shadow -I$(top_srcdir)/Xext -I$(top_srcdir)/fb -I$(top_srcdir)/mi -I$(top_srcdir)/hw/kdrive/linux
+-KDRIVE_LIBS = $(top_builddir)/dix/libmain.la $(top_builddir)/dix/libdix.la $(top_builddir)/hw/kdrive/src/libkdrive.la $(top_builddir)/fb/libfb.la $(top_builddir)/mi/libmi.la $(top_builddir)/fb/libfb.la $(top_builddir)/mi/libmi.la $(top_builddir)/xfixes/libxfixes.la $(top_builddir)/Xext/libXext.la $(top_builddir)/dbe/libdbe.la $(top_builddir)/record/librecord.la $(top_builddir)/glx/libglx.la $(top_builddir)/randr/librandr.la $(top_builddir)/render/librender.la $(top_builddir)/damageext/libdamageext.la  $(top_builddir)/present/libpresent.la $(top_builddir)/miext/sync/libsync.la $(top_builddir)/miext/damage/libdamage.la $(top_builddir)/miext/shadow/libshadow.la $(top_builddir)/Xi/libXi.la $(top_builddir)/xkb/libxkb.la $(top_builddir)/xkb/libxkbstubs.la $(top_builddir)/composite/libcomposite.la $(top_builddir)/os/libos.la $(top_builddir)/hw/kdrive/linux/liblinux.la -lpixman-1 -lXfont -lXau -lxshmfence -lXdmcp    -lm    -lGL   -lpthread -ldl -lts  
++KDRIVE_LIBS = $(top_builddir)/dix/libmain.la $(top_builddir)/dix/libdix.la $(top_builddir)/hw/kdrive/src/libkdrive.la $(top_builddir)/fb/libfb.la $(top_builddir)/mi/libmi.la $(top_builddir)/fb/libfb.la $(top_builddir)/mi/libmi.la $(top_builddir)/xfixes/libxfixes.la $(top_builddir)/Xext/libXext.la $(top_builddir)/dbe/libdbe.la $(top_builddir)/record/librecord.la $(top_builddir)/glx/libglx.la $(top_builddir)/randr/librandr.la $(top_builddir)/render/librender.la $(top_builddir)/damageext/libdamageext.la  $(top_builddir)/present/libpresent.la $(top_builddir)/miext/sync/libsync.la $(top_builddir)/miext/damage/libdamage.la $(top_builddir)/miext/shadow/libshadow.la $(top_builddir)/Xi/libXi.la $(top_builddir)/xkb/libxkb.la $(top_builddir)/xkb/libxkbstubs.la $(top_builddir)/composite/libcomposite.la $(top_builddir)/os/libos.la $(top_builddir)/hw/kdrive/linux/liblinux.la -lzmq -lpixman-1 -lXfont -lXau -lxshmfence -lXdmcp    -lm    -lGL   -lpthread -ldl -lts  
+ KDRIVE_LOCAL_LIBS = $(top_builddir)/dix/libmain.la $(top_builddir)/dix/libdix.la $(top_builddir)/hw/kdrive/src/libkdrive.la $(top_builddir)/fb/libfb.la $(top_builddir)/mi/libmi.la $(top_builddir)/fb/libfb.la $(top_builddir)/mi/libmi.la $(top_builddir)/xfixes/libxfixes.la $(top_builddir)/Xext/libXext.la $(top_builddir)/dbe/libdbe.la $(top_builddir)/record/librecord.la $(top_builddir)/glx/libglx.la $(top_builddir)/randr/librandr.la $(top_builddir)/render/librender.la $(top_builddir)/damageext/libdamageext.la  $(top_builddir)/present/libpresent.la $(top_builddir)/miext/sync/libsync.la $(top_builddir)/miext/damage/libdamage.la $(top_builddir)/miext/shadow/libshadow.la $(top_builddir)/Xi/libXi.la $(top_builddir)/xkb/libxkb.la $(top_builddir)/xkb/libxkbstubs.la $(top_builddir)/composite/libcomposite.la $(top_builddir)/os/libos.la $(top_builddir)/hw/kdrive/linux/liblinux.la
+ KDRIVE_PURE_INCS = -I$(top_srcdir)/hw/kdrive/src -I$(top_srcdir)/miext/sync -I$(top_srcdir)/miext/damage -I$(top_srcdir)/miext/shadow -I$(top_srcdir)/Xext -I$(top_srcdir)/fb -I$(top_srcdir)/mi
+ KDRIVE_PURE_LIBS = $(top_builddir)/fb/libfb.la $(top_builddir)/mi/libmi.la $(top_builddir)/xfixes/libxfixes.la $(top_builddir)/Xext/libXext.la $(top_builddir)/dbe/libdbe.la $(top_builddir)/record/librecord.la $(top_builddir)/glx/libglx.la $(top_builddir)/randr/librandr.la $(top_builddir)/render/librender.la $(top_builddir)/damageext/libdamageext.la  $(top_builddir)/present/libpresent.la $(top_builddir)/miext/sync/libsync.la $(top_builddir)/miext/damage/libdamage.la $(top_builddir)/miext/shadow/libshadow.la $(top_builddir)/Xi/libXi.la $(top_builddir)/xkb/libxkb.la $(top_builddir)/xkb/libxkbstubs.la $(top_builddir)/composite/libcomposite.la $(top_builddir)/os/libos.la
+@@ -375,7 +375,7 @@
+ LIBDRM_CFLAGS = -I/usr/include/libdrm  
+ LIBDRM_LIBS = -ldrm  
+ LIBOBJS =  ${LIBOBJDIR}strlcat$U.o ${LIBOBJDIR}strlcpy$U.o
+-LIBS = -lm  
++LIBS = -lm   -lzmq
+ LIBSHA1_CFLAGS = 
+ LIBSHA1_LIBS = 
+ LIBTOOL = $(SHELL) $(top_builddir)/libtool
+@@ -469,7 +469,7 @@
+ XDMX_SYS_LIBS = 
+ XEPHYR_CFLAGS = -I/usr/include/libdrm  
+ XEPHYR_INCS = 
+-XEPHYR_LIBS = -lXau -lXdmcp -lxcb-shape -lxcb-render-util -lxcb-render -lxcb-util -lxcb-image -lxcb-icccm -lxcb-keysyms -lxcb-randr -lxcb-xv -lxcb-shm -ldrm -lxcb-glx -lxcb-xf86dri -lxcb  
++XEPHYR_LIBS = -lXau -lXdmcp -lxcb-shape -lxcb-render-util -lxcb-render -lxcb-util -lxcb-image -lxcb-icccm -lxcb-keysyms -lxcb-randr -lxcb-xv -lxcb-shm -ldrm -lxcb-glx -lxcb-xf86dri -lxcb -lzmq
+ XF86CONFIGDIR = xorg.conf.d
+ XF86CONFIGFILE = xorg.conf
+ XF86VIDMODE_CFLAGS =  
+Binary files ephyr/os.o and mensadisplay/os.o differ
+Binary files ephyr/Xephyr and mensadisplay/Xephyr differ
