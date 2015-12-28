@@ -1,11 +1,11 @@
-#!/usr/bin/env python2
-import urllib
+mport urllib
 import json
 import client
 from time import sleep
 import clearscreen
 
 #global foo
+minpts = 200
 standings = []
 header = """ _________      _____      _    __ 
 |___ /___ \ ___|___ /  ___| |_ / _|
@@ -59,6 +59,9 @@ def drawheader():
         client.write((96-ml)/2,i, l)
         i += 1
 
+    client.write(2,2, "https://32c3ctf.ccc.ac")
+    client.write(73,2, "https://32c3ctf.ccc.ac")
+
 clearscreen.clear()
 drawheader()
 
@@ -73,7 +76,14 @@ while True:
     for i in range(height, len(standings)):
         if j == height:
             j = 0
-            sleep(1)
+            if standings[i]['score'] < minpts:
+                print 'and many more ...'
+                client.write(xoff + bwidth + colwidth, yoff + height - 1, '     and many more ...'.ljust(colwidth + 1))
+                sleep(12)
+                break
+            else:
+                sleep(4)
+                
 
         print getPretty(i)
         client.write(xoff + bwidth + colwidth, yoff + j, getPretty(i))
