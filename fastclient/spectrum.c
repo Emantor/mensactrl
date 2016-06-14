@@ -196,7 +196,7 @@ int main() {
             screen->data[y * WIDTH + x] = 0;
           }
           for(int y = yCross; y < HEIGHT; ++y) {
-            screen->data[y * WIDTH + x] = 1;
+            screen->data[y * WIDTH + x] = 255;
           }
         }
       }
