@@ -29,6 +29,7 @@ def filter_time(talks):
 while True:
     d = datetime.datetime.now()
     t = d.strftime(" %H:%M:%S")
+    delta = datetime.datetime(2016,12,27) - d
     if tick > 10:
         j = urllib2.urlopen('https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json')
         schedule = json.load(j)
@@ -40,7 +41,7 @@ while True:
         saale = ["Saal 1", 'Saal 2', "Saal G", "Saal 6"]
         talks = OrderedDict()
         for saal in saale:
-            talks[saal] = schedule['schedule']['conference']['days'][0]['rooms'][saal] 
+            talks[saal] = schedule['schedule']['conference']['days'][delta.days]['rooms'][saal] 
         i = 3
         f_talk = OrderedDict()
         for saal in talks:
