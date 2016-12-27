@@ -49,7 +49,7 @@ while True:
              f_talk[saal] = filter_time(talks[saal])
         logging.debug("f_talk: %s", f_talk)
         for saal in f_talk:
-            client.write(0,i,'{} => {} : {}'.format(saal,f_talk[saal]['start'].encode('utf-8').strip(), f_talk[saal]["title"].encode('utf-8').strip()))
+            client.write(0,i,'{} => {} : {:<78}'.format(saal,f_talk[saal]['start'].encode('utf-8').strip(), f_talk[saal]["title"].encode('utf-8').strip()))
             i = i + 1
         client.write(0,8,"        USE MORE BANDWIDTH!")
 
