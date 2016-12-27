@@ -30,13 +30,13 @@ while True:
     d = datetime.datetime.now()
     t = d.strftime(" %H:%M:%S")
     if tick > 10:
-        j = urllib2.urlopen('https://events.ccc.de/congress/2014/Fahrplan/schedule.json')
+        j = urllib2.urlopen('https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json')
         schedule = json.load(j)
         tick = 0
     if schedule:
         client.write(0,0,greeting)
         client.write(client.NUM_SEG_X - len(t), 0, t);
-        client.write(0,1,"Fahrplan Version:" + schedule['schedule']['version'])
+        client.write(0,1,"Fahrplan Version: {}".format(schedule['schedule']['version']))
         saale = ["Saal 1", 'Saal 2', "Saal G", "Saal 6"]
         talks = OrderedDict()
         for saal in saale:
