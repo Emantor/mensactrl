@@ -30,6 +30,7 @@ while True:
     d = datetime.datetime.now()
     t = d.strftime(" %H:%M:%S")
     delta = datetime.datetime(2016,12,27) - d
+    logging.debug("Calculated delta.days: %s", delta)
     if tick > 10:
         j = urllib2.urlopen('https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json')
         schedule = json.load(j)
@@ -46,6 +47,7 @@ while True:
         f_talk = OrderedDict()
         for saal in talks:
              f_talk[saal] = filter_time(talks[saal])
+        logging.debug("f_talk: %s", f_talk)
         for saal in f_talk:
             client.write(0,i,'{} => {} : {}'.format(saal,f_talk[saal]['start'].encode('utf-8').strip(), f_talk[saal]["title"].encode('utf-8').strip()))
             i = i + 1
