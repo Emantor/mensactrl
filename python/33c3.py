@@ -28,7 +28,7 @@ def filter_time(talks):
 
 while True:
     d = datetime.datetime.now()
-    t = d.strftime(" %H:%M:%S")
+    t = d.strftime(" %H:%M")
     delta = d - datetime.datetime(2016,12,27)
     logging.debug("Calculated delta.days: %s", delta)
     if tick > 10:
