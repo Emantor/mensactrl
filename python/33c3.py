@@ -55,7 +55,7 @@ while True:
         logging.debug("f_talk: %s", f_talk)
         for saal in f_talk:
             if f_talk[saal]:
-                client.write(0,i,'{} => {} : {:<78}'.format(saal,f_talk[saal]['start'].encode('utf-8').strip(), f_talk[saal]["title"].encode('utf-8').strip()))
+                client.write(0,i,'{} => {} : {:<78}'.format(saal,f_talk[saal]['start'].decode('utf-8'), f_talk[saal]["title"].decode('utf-8')))
             i = i + 1
         time.sleep(0.5)
         tick += 1
