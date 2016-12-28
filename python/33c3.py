@@ -27,6 +27,7 @@ def fetch_scoreboard():
     board_json = urllib2.urlopen("https://33c3ctf.ccc.ac/scoreboard.json")
     return json.load(board_json)
 
+client.write(5,i,"{:<30}".format("CTF Scoreboard (first 5):"))
 
 
 while True:
@@ -41,7 +42,7 @@ while True:
         tick = 0
         for i in range(5,10):
             team = teams["standings"][i-5]
-            client.write(48,i,"{:>1}. {:<29} : {:<4}     ".format(team["pos"],team["team"],team["score"]))
+            client.write(0,i,"{:>1}. {:<29} : {:<4}     ".format(team["pos"],team["team"],team["score"]))
     if schedule:
         saale = ["Saal 1", 'Saal 2', "Saal G", "Saal 6"]
         talks = OrderedDict()
