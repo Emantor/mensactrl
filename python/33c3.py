@@ -55,11 +55,5 @@ while True:
         time.sleep(0.5)
         tick += 1
     for i in range(5,10):
-        client.write(0,i,teams["standings"][i-5]["pos"].rjust(3) + ". " + teams["standings"][i-5]["team"].ljust(26) + " : " + teams["standings"][i-5]["score"].rjust(4)+ "     ")
-    i = 5
-    for teams in islice(score_list,5,None):
-        if(i > 4):
-            sleep(5)
-            i = 0
-        client.write(48,i,teams["standings"][i-5]["pos"].rjust(4) + ". " + teams["standings"][i-5]["team"].ljust(26) + " : " + teams["standings"][i-5]['score'].rjust(4))
-        i += 1
+        team = teams["standings"][i-5]
+        client.write(0,i,"{:<4}. {:<26} : {:<4}     ".format(team["pos"],team["team"],team["score"]))
