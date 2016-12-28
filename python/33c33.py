@@ -2,7 +2,7 @@
 
 import datetime
 import time
-import client3
+import client3 as client
 import urllib.request, urllib.error, urllib.parse
 import json
 import logging
