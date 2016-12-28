@@ -23,7 +23,7 @@ def filter_time(talks):
             return talk
 
 def fetch_scoreboard():
-    board_json = urllib2.urlopen("https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json")
+    board_json = urllib2.urlopen("https://33c3ctf.ccc.ac/scoreboard.json")
     return json.load(board_json)
 
 
