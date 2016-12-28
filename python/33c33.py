@@ -3,7 +3,7 @@
 import datetime
 import time
 import client
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import json
 import logging
 from itertools import islice
@@ -24,7 +24,7 @@ def filter_time(talks):
             return talk
 
 def fetch_scoreboard():
-    board_json = urllib2.urlopen("https://33c3ctf.ccc.ac/scoreboard.json")
+    board_json = urllib.request.urlopen("https://33c3ctf.ccc.ac/scoreboard.json")
     return json.load(board_json)
 
 client.write(0,4,"{:<30}".format("CTF Scoreboard (first 5):"))
@@ -36,7 +36,7 @@ while True:
     delta = d - datetime.datetime(2016,12,27)
     logging.debug("Calculated delta.days: %s", delta)
     if tick > 10:
-        j = urllib2.urlopen('https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json')
+        j = urllib.request.urlopen('https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json')
         schedule = json.load(j)
         teams = fetch_scoreboard()
         tick = 0
@@ -55,7 +55,7 @@ while True:
         logging.debug("f_talk: %s", f_talk)
         for saal in f_talk:
             if f_talk[saal]:
-                client.write(0,i,u'{} => {} : {:<78}'.format(saal,f_talk[saal]['start'].encode('utf-8'), f_talk[saal]["title"].encode('utf-8')))
+                client.write(0,i,'{} => {} : {:<78}'.format(saal,f_talk[saal]['start'].encode('utf-8'), f_talk[saal]["title"].encode('utf-8')))
             i = i + 1
         time.sleep(0.5)
         tick += 1
