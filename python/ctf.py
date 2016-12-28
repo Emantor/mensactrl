@@ -31,12 +31,12 @@ def populate_scoreboard():
 while True:
   score_list = populate_scoreboard()
   for i in range(0,10):
-    client.write(0,i,score_list[i]['rank'].rjust(3) + ". " + score_list[i]['name'].ljust(26) + " : " + score_list[i]['score'].rjust(3)+ "     " + ctf_name[i])
+    client.write(0,i,score_list[i]['rank'].rjust(3) + ". " + score_list[i]['name'].ljust(26) + " : " + score_list[i]['score'].rjust(4)+ "     " + ctf_name[i])
   i = 0
   for teams in islice(score_list,10,None):
     if(i > 9):
       sleep(5)
       i = 0
-    client.write(48,i,teams['rank'].rjust(3) + ". " + teams['name'].ljust(26) + " : " + teams['score'].rjust(3))
+    client.write(48,i,teams['rank'].rjust(4) + ". " + teams['name'].ljust(26) + " : " + teams['score'].rjust(4))
     i += 1
   
