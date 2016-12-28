@@ -36,14 +36,11 @@ while True:
         schedule = json.load(j)
         tick = 0
     if schedule:
-        client.write(0,0,greeting)
-        client.write(client.NUM_SEG_X - len(t), 0, t);
-        client.write(0,1,"Fahrplan Version: {}".format(schedule['schedule']['version']))
         saale = ["Saal 1", 'Saal 2', "Saal G", "Saal 6"]
         talks = OrderedDict()
         for saal in saale:
             talks[saal] = schedule['schedule']['conference']['days'][delta.days]['rooms'][saal] 
-        i = 3
+        i = 0
         f_talk = OrderedDict()
         for saal in talks:
              f_talk[saal] = filter_time(talks[saal])
