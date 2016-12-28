@@ -10,11 +10,7 @@ from collections import OrderedDict
 
 logging.basicConfig(level=logging.DEBUG)
 
-greeting = "Ein Service des Stratum 0, Hackerspace Braunschweig!"
-tick = 0
-
-j = urllib2.urlopen("https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json")
-schedule = json.load(j)
+tick = 11
 
 def clear():
     pixels = [0] * client.HEIGHT * client.WIDTH
@@ -26,6 +22,12 @@ def filter_time(talks):
         if p > datetime.datetime.now():
             return talk
 
+def fetch_scoreboard():
+    board_json = urllib2.urlopen("https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json")
+    return json.load(board_json)
+
+
+
 while True:
     d = datetime.datetime.now()
     t = d.strftime(" %H:%M")
@@ -34,6 +36,7 @@ while True:
     if tick > 10:
         j = urllib2.urlopen('https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json')
         schedule = json.load(j)
+        teams = fetch_scoreboard()
         tick = 0
     if schedule:
         saale = ["Saal 1", 'Saal 2', "Saal G", "Saal 6"]
@@ -49,7 +52,14 @@ while True:
             if f_talk[saal]:
                 client.write(0,i,'{} => {} : {:<78}'.format(saal,f_talk[saal]['start'].encode('utf-8').strip(), f_talk[saal]["title"].encode('utf-8').strip()))
             i = i + 1
-        client.write(0,8,"        USE MORE BANDWIDTH!")
-
         time.sleep(0.5)
         tick += 1
+    for i in range(5,10):
+        client.write(0,i,score_list[i]['rank'].rjust(3) + ". " + score_list[i]['name'].ljust(26) + " : " + score_list[i]['score'].rjust(4)+ "     " + ctf_name[i])
+    i = 0
+    for teams in islice(score_list,5,None):
+        if(i > 4):
+            sleep(5)
+            i = 0
+        client.write(48,i,teams['rank'].rjust(4) + ". " + teams['name'].ljust(26) + " : " + teams['score'].rjust(4))
+        i += 1
