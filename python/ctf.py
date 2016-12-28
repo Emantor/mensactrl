@@ -9,7 +9,7 @@ score_list = []
 ctf_name = ["","","C S","T C","F O","  R","  E","  S","",""]
 
 def populate_scoreboard():
-  scoreboard_html = urllib.urlopen('https://33c3ctf.aachen.ccc.de/scoreboard/').read()
+  scoreboard_html = urllib.urlopen('https://33c3ctf.ccc.ac/scoreboard/').read()
   soup = BeautifulSoup(scoreboard_html)
   table = soup.find('table')
   rows = table.findAll('tr',class_='scoreboard_row')
