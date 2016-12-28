@@ -103,8 +103,8 @@ def char_to_pixel_segment(c):
     if(c not in bitmapfont.FONT.keys()):
         c = u"☐";
 
-    for x in xrange(0, PWIDTH):
-        for y in xrange(0, PHEIGHT):
+    for x in range(0, PWIDTH):
+        for y in range(0, PHEIGHT):
             pix = (bitmapfont.FONT[c][x] & (1<<y)) >> y
             pixels[y * PWIDTH + x] = pix * 255
     return pixels
