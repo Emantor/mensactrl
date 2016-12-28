@@ -10,7 +10,7 @@ from collections import OrderedDict
 
 logging.basicConfig(level=logging.DEBUG)
 
-greeting = "Stratum 0 Mensadisplay"
+greeting = "Ein Service des Stratum 0, Hackerspace Braunschweig!"
 tick = 0
 
 j = urllib2.urlopen("https://fahrplan.events.ccc.de/congress/2016/Fahrplan/schedule.json")
