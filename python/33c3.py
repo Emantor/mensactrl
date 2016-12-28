@@ -6,6 +6,7 @@ import client
 import urllib2
 import json
 import logging
+from itertools import islice
 from collections import OrderedDict
 
 logging.basicConfig(level=logging.DEBUG)
@@ -38,6 +39,9 @@ while True:
         schedule = json.load(j)
         teams = fetch_scoreboard()
         tick = 0
+        for i in range(5,10):
+            team = teams["standings"][i-5]
+            client.write(48,i,"{:>1}. {:<29} : {:<4}     ".format(team["pos"],team["team"],team["score"]))
     if schedule:
         saale = ["Saal 1", 'Saal 2', "Saal G", "Saal 6"]
         talks = OrderedDict()
@@ -54,6 +58,3 @@ while True:
             i = i + 1
         time.sleep(0.5)
         tick += 1
-    for i in range(5,10):
-        team = teams["standings"][i-5]
-        client.write(0,i,"{:<4}. {:<26} : {:<4}     ".format(team["pos"],team["team"],team["score"]))
