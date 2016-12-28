@@ -27,7 +27,7 @@ def fetch_scoreboard():
     board_json = urllib2.urlopen("https://33c3ctf.ccc.ac/scoreboard.json")
     return json.load(board_json)
 
-client.write(0,5,"{:<30}".format("CTF Scoreboard (first 5):"))
+client.write(0,4,"{:<30}".format("CTF Scoreboard (first 5):"))
 
 
 while True:
