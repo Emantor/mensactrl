@@ -19,5 +19,5 @@ while True:
             print(e.begin)
             break
 
-    client.write(0,7, "{:13}  {}:{}  {:<50}".format("Chaos West", e.begin.naive.hour, e.begin.naive.minute, e.name))
+    client.write(0,7, "{:13}  {:02}:{:02}  {:<100}".format("Chaos West", e.begin.naive.hour, e.begin.naive.minute, e.name))
     time.sleep(10)
